@@ -185,10 +185,10 @@ VT100.Screen.prototype.resize = function(x, y) {
 VT100.Screen.prototype.clear = function() {
   this.screen = []
 
-  for (var xx = 0; xx < this.size.x; xx++) {
-    this.screen[xx] = []
-    for (var yy = 0; yy < this.size.y; yy++) {
-      this.screen[xx][yy] = {}
+  for (var yy = 0; yy < this.size.y; yy++) {
+    this.screen[yy] = []
+    for (var xx = 0; xx < this.size.x; xx++) {
+      this.screen[yy][xx] = {}
     }
   }
 
@@ -196,12 +196,12 @@ VT100.Screen.prototype.clear = function() {
 }
 
 VT100.Screen.prototype.setChar = function(x, y, chr) {
-  this.screen[x][y].chr = chr
+  this.screen[y][x].chr = chr
 }
 
 VT100.Screen.prototype.setCursor = function(x, y) {
-  this.screen[this.cursor.x][this.cursor.y].cursor = false
-  this.screen[x][y].cursor = true
+  this.screen[this.cursor.y][this.cursor.x].cursor = false
+  this.screen[y][x].cursor = true
   this.cursor.x = x
   this.cursor.y = y
 }
@@ -209,7 +209,7 @@ VT100.Screen.prototype.setCursor = function(x, y) {
 VT100.Screen.prototype.eachChar = function(fn) {
   for (var xx = 0; xx < this.size.x; xx++)
     for (var yy = 0; yy < this.size.y; yy++)
-      fn(xx, yy, this.screen[xx][yy])
+      fn(xx, yy, this.screen[yy][xx])
 }
 
 VT100.Screen.prototype.writeChar = function(chr) {
