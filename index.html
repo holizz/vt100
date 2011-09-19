@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+  <head>
+    <title>VT100</title>
+    <script src="libs/modernizr.js"></script>
+  </head>
+  <body>
+    <canvas id="vt100"></canvas>
+    <script>
+      Modernizr.load({
+        load: 'vt100.js',
+        complete: function() {new VT100(document.getElementById('vt100'))}
+      })
+    </script>
+  </body>
+</html>
