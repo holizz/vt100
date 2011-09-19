@@ -85,9 +85,9 @@ VT100.prototype.draw = function() {
   // Draw each char
   this.screen.eachChar(function(x, y, data) {
     if (data.cursor) {
-      thus.drawChar(data.chr, x, y, true)
+      thus.drawChar(x, y, data.chr, true)
     } else if (data.chr) {
-      thus.drawChar(data.chr, x, y)
+      thus.drawChar(x, y, data.chr)
     }
   })
 }
@@ -99,7 +99,7 @@ VT100.prototype.setFont = function() {
   this.c.textBaseline = 'top'
 }
 
-VT100.prototype.drawChar = function(chr, x, y, cursor) {
+VT100.prototype.drawChar = function(x, y, chr, cursor) {
   if (cursor===undefined) cursor = false
 
   this.setFont()
@@ -113,9 +113,6 @@ VT100.prototype.drawChar = function(chr, x, y, cursor) {
 
   if (chr)
     this.c.fillText(chr, x*this.metric.x+this.metric.x/2, y*this.metric.y)
-}
-
-VT100.prototype.drawCursor = function(chr, x, y) {
 }
 
 VT100.prototype.getWidth = function() {
