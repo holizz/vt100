@@ -40,18 +40,27 @@ VT100.prototype.__init__ = function(canvas, options) {
 
   // Example stuff
   this.screen.clear()
-  this.screen.addChar('t', 0, 0)
-  this.screen.addChar('e', 1, 0)
-  this.screen.addChar('s', 2, 0)
-  this.screen.addChar('t', 3, 0)
-  this.screen.addChar('i', 0, 1)
-  this.screen.addChar('n', 1, 1)
-  this.screen.addChar('g', 2, 1)
-  this.screen.addChar('!', 3, 1)
+  this.screen.setChar(0, 0, 't')
+  this.screen.setChar(1, 0, 'e')
+  this.screen.setChar(2, 0, 's')
+  this.screen.setChar(3, 0, 't')
+  this.screen.setChar(0, 1, 'i')
+  this.screen.setChar(1, 1, 'n')
+  this.screen.setChar(2, 1, 'g')
+  this.screen.setChar(3, 1, '!')
   this.screen.setCursor(3, 1)
 
   this.loop()
 }
+
+// Things the user will want to do
+
+VT100.prototype.write = function(str) {
+  this.screen.writeString(str)
+  this.draw()
+}
+
+// Utility
 
 VT100.prototype._merge = function(obj1, obj2) {
   var obj3 = {}
@@ -59,6 +68,8 @@ VT100.prototype._merge = function(obj1, obj2) {
   for (var attrname in obj2) obj3[attrname] = obj2[attrname]
   return obj3
 }
+
+// Core bits
 
 VT100.prototype.loop = function() {
   this.draw()
@@ -100,7 +111,8 @@ VT100.prototype.drawChar = function(chr, x, y, cursor) {
     this.c.fillStyle = this.color.background
   }
 
-  this.c.fillText(chr, x*this.metric.x+this.metric.x/2, y*this.metric.y)
+  if (chr)
+    this.c.fillText(chr, x*this.metric.x+this.metric.x/2, y*this.metric.y)
 }
 
 VT100.prototype.drawCursor = function(chr, x, y) {
@@ -124,6 +136,10 @@ VT100.Screen.prototype.__init__ = function() {
     x: 0,
     y: 0
   }
+  this.cursor = {
+    x: 0,
+    y: 0
+  }
 }
 
 VT100.Screen.prototype.resize = function(x, y) {
@@ -142,18 +158,39 @@ VT100.Screen.prototype.clear = function() {
       this.screen[xx][yy] = {}
     }
   }
+
+  this.setCursor(0, 0)
 }
 
-VT100.Screen.prototype.addChar = function(chr, x, y) {
+VT100.Screen.prototype.setChar = function(x, y, chr) {
   this.screen[x][y].chr = chr
 }
 
 VT100.Screen.prototype.setCursor = function(x, y) {
+  this.screen[this.cursor.x][this.cursor.y].cursor = false
   this.screen[x][y].cursor = true
+  this.cursor.x = x
+  this.cursor.y = y
 }
 
 VT100.Screen.prototype.eachChar = function(fn) {
   for (var xx = 0; xx < this.size.x; xx++)
     for (var yy = 0; yy < this.size.y; yy++)
       fn(xx, yy, this.screen[xx][yy])
+}
+
+VT100.Screen.prototype.writeChar = function(chr) {
+  this.setChar(this.cursor.x, this.cursor.y, chr)
+
+  if (this.cursor.x < this.size.x) {
+    this.setCursor(this.cursor.x+1, this.cursor.y)
+  } else{
+    this.setCursor(0, this.cursor.y+1)
+  }
+}
+
+VT100.Screen.prototype.writeString = function(str) {
+  for (var i in str) {
+    this.writeChar(str[i])
+  }
 }

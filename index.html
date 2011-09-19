@@ -7,9 +7,12 @@
   <body>
     <canvas id="vt100"></canvas>
     <script>
+      var vt100
       Modernizr.load({
         load: 'vt100.js',
-        complete: function() {new VT100(document.getElementById('vt100'))}
+        complete: function() {
+          vt100 = new VT100(document.getElementById('vt100'))
+        }
       })
     </script>
   </body>
