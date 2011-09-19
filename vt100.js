@@ -16,6 +16,7 @@ VT100.prototype.__init__ = function(canvas, options) {
 
   // Set things
   this.font = options.size+'px/'+options.lineHeight+'px "'+options.font+'"'
+  this.lineHeight = options.lineHeight
   this.color = {
     background: 'black',
     foreground: 'white',
@@ -24,19 +25,11 @@ VT100.prototype.__init__ = function(canvas, options) {
     x: 80,
     y: 24
   }
-  this.screen = new VT100.Screen()
+
+  // Initialization
+  this.screen = new VT100.Screen(this)
+  this.display = new VT100.Display(this, canvas)
   this.screen.resize(this.size.x, this.size.y)
-
-  // Set things based on the canvas
-  this.c = canvas.getContext('2d')
-  this.metric = {
-    x: this.getWidth(),
-    y: options.lineHeight
-  }
-
-  // Set up the drawing area
-  this.c.canvas.width = this.metric.x * this.size.x
-  this.c.canvas.height = this.metric.y * this.size.y
 
   // Example stuff
   this.screen.clear()
@@ -76,14 +69,36 @@ VT100.prototype.loop = function() {
 }
 
 VT100.prototype.draw = function() {
+  this.display.draw()
+}
+
+//////////////////////////////////////////////////////////////////////////////
+// VT100.Display
+
+VT100.Display = function() {
+  this.__init__.apply(this, arguments)
+}
+
+VT100.Display.prototype.__init__ = function(vt100, canvas) {
+  this.vt100 = vt100
+
+  this.size = {
+    x: 0,
+    y: 0
+  }
+
+  this.c = canvas.getContext('2d')
+}
+
+VT100.Display.prototype.draw = function() {
   var thus = this
 
   // Clear
-  this.c.fillStyle = this.color.background
+  this.c.fillStyle = this.vt100.color.background
   this.c.fillRect(0,0,this.c.canvas.width,this.c.canvas.height)
 
   // Draw each char
-  this.screen.eachChar(function(x, y, data) {
+  this.vt100.screen.eachChar(function(x, y, data) {
     if (data.cursor) {
       thus.drawChar(x, y, data.chr, true)
     } else if (data.chr) {
@@ -92,31 +107,48 @@ VT100.prototype.draw = function() {
   })
 }
 
-VT100.prototype.setFont = function() {
-  this.c.fillStyle = this.color.foreground
-  this.c.font = this.font
+VT100.Display.prototype.setSize = function(x, y) {
+  this.size.x = x
+  this.size.y = y
+
+  this.reset()
+}
+
+VT100.Display.prototype.reset = function() {
+  this.c.font = this.vt100.font
+  this.metric = {
+    x: this.getWidth(),
+    y: this.vt100.lineHeight
+  }
+
+  this.c.canvas.width = this.metric.x * this.size.x
+  this.c.canvas.height = this.metric.y * this.size.y
+}
+
+VT100.Display.prototype.setFont = function() {
+  this.c.fillStyle = this.vt100.color.foreground
   this.c.textAlign = 'center'
   this.c.textBaseline = 'top'
 }
 
-VT100.prototype.drawChar = function(x, y, chr, cursor) {
+VT100.Display.prototype.drawChar = function(x, y, chr, cursor) {
   if (cursor===undefined) cursor = false
 
   this.setFont()
 
   if (cursor) {
-    this.c.fillStyle = this.color.foreground
+    this.c.fillStyle = this.vt100.color.foreground
     this.c.fillRect(x*this.metric.x, y*this.metric.y,
         this.metric.x, this.metric.y)
-    this.c.fillStyle = this.color.background
+    this.c.fillStyle = this.vt100.color.background
   }
 
   if (chr)
     this.c.fillText(chr, x*this.metric.x+this.metric.x/2, y*this.metric.y)
 }
 
-VT100.prototype.getWidth = function() {
-  this.c.font = this.font
+VT100.Display.prototype.getWidth = function() {
+  this.c.font = this.vt100.font
   return this.c.measureText('m').width
 }
 
@@ -127,7 +159,8 @@ VT100.Screen = function() {
   this.__init__.apply(this, arguments)
 }
 
-VT100.Screen.prototype.__init__ = function() {
+VT100.Screen.prototype.__init__ = function(vt100) {
+  this.vt100 = vt100
   this.screen = []
   this.size = {
     x: 0,
@@ -142,6 +175,8 @@ VT100.Screen.prototype.__init__ = function() {
 VT100.Screen.prototype.resize = function(x, y) {
   this.size.x = x
   this.size.y = y
+
+  this.vt100.display.setSize(x, y)
 
   this.clear()
 }
