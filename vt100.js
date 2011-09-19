@@ -115,7 +115,7 @@ VT100.Display.prototype.setSize = function(x, y) {
 }
 
 VT100.Display.prototype.reset = function() {
-  this.c.font = this.vt100.font
+  this.setFont()
   this.metric = {
     x: this.getWidth(),
     y: this.vt100.lineHeight
@@ -126,6 +126,7 @@ VT100.Display.prototype.reset = function() {
 }
 
 VT100.Display.prototype.setFont = function() {
+  this.c.font = this.vt100.font
   this.c.fillStyle = this.vt100.color.foreground
   this.c.textAlign = 'center'
   this.c.textBaseline = 'top'
@@ -148,7 +149,7 @@ VT100.Display.prototype.drawChar = function(x, y, chr, cursor) {
 }
 
 VT100.Display.prototype.getWidth = function() {
-  this.c.font = this.vt100.font
+  this.setFont()
   return this.c.measureText('m').width
 }
 
