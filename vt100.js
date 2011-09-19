@@ -7,9 +7,15 @@ VT100 = function() {
   this.__init__.apply(this, arguments)
 }
 
-VT100.prototype.__init__ = function(canvas) {
+VT100.prototype.__init__ = function(canvas, options) {
+  options = this._merge({
+    font: 'monospace',
+    size: 12,
+    lineHeight: 14,
+  }, options)
+
   // Set things
-  this.font = '12px monospace'
+  this.font = options.size+'px/'+options.lineHeight+'px "'+options.font+'"'
   this.color = {
     background: 'black',
     foreground: 'white',
@@ -25,7 +31,7 @@ VT100.prototype.__init__ = function(canvas) {
   this.c = canvas.getContext('2d')
   this.metric = {
     x: this.getWidth(),
-    y: 14
+    y: options.lineHeight
   }
 
   // Set up the drawing area
@@ -45,6 +51,13 @@ VT100.prototype.__init__ = function(canvas) {
   this.screen.setCursor(3, 1)
 
   this.loop()
+}
+
+VT100.prototype._merge = function(obj1, obj2) {
+  var obj3 = {}
+  for (var attrname in obj1) obj3[attrname] = obj1[attrname]
+  for (var attrname in obj2) obj3[attrname] = obj2[attrname]
+  return obj3
 }
 
 VT100.prototype.loop = function() {
@@ -71,7 +84,7 @@ VT100.prototype.draw = function() {
 VT100.prototype.setFont = function() {
   this.c.fillStyle = this.color.foreground
   this.c.font = this.font
-  this.c.textAlign = 'left'
+  this.c.textAlign = 'center'
   this.c.textBaseline = 'top'
 }
 
@@ -87,7 +100,7 @@ VT100.prototype.drawChar = function(chr, x, y, cursor) {
     this.c.fillStyle = this.color.background
   }
 
-  this.c.fillText(chr, x*this.metric.x, y*this.metric.y)
+  this.c.fillText(chr, x*this.metric.x+this.metric.x/2, y*this.metric.y)
 }
 
 VT100.prototype.drawCursor = function(chr, x, y) {
