@@ -60,6 +60,37 @@ VT100.prototype._merge = function(obj1, obj2) {
   return obj3
 }
 
+VT100.prototype._deepCopy = function(oldObject) {
+  var getCloneOfArray = function(oldArray) {
+    var tempClone = []
+
+    for (var arrIndex = 0; arrIndex <= oldArray.length; arrIndex++)
+      if (typeof(oldArray[arrIndex]) == 'object')
+        tempClone.push(this.getCloneOfObject(oldArray[arrIndex]))
+      else
+        tempClone.push(oldArray[arrIndex])
+
+    return tempClone
+  }
+
+  var tempClone = {}
+
+  if (typeof(oldObject) == 'object')
+    for (prop in oldObject)
+      // for array use private method getCloneOfArray
+      if ((typeof(oldObject[prop]) == 'object') &&
+          (oldObject[prop]).__isArray)
+        tempClone[prop] = this.getCloneOfArray(oldObject[prop])
+          // for object make recursive call to getCloneOfObject
+      else if (typeof(oldObject[prop]) == 'object')
+        tempClone[prop] = this.getCloneOfObject(oldObject[prop])
+          // normal (non-object type) members
+      else
+        tempClone[prop] = oldObject[prop]
+
+  return tempClone
+}
+
 // Core bits
 
 VT100.prototype.loop = function() {
@@ -88,9 +119,19 @@ VT100.Screen.prototype.__init__ = function(vt100) {
     x: 0,
     y: 0
   }
+  this.attr = {
+    bold: false,
+    underscore: false,
+    blink: false,
+    reverse: false,
+  }
+
   this.codes = {
     '[2J': function() {
       this.clear()
+    },
+    '[7m': function() {
+      this.attr.reverse = true
     }
   }
 }
@@ -126,7 +167,7 @@ VT100.Screen.prototype.clear = function() {
 }
 
 VT100.Screen.prototype.setChar = function(x, y, chr) {
-  this.screen[y][x].chr = chr
+  this.screen[y][x] = chr
 }
 
 VT100.Screen.prototype.setCursor = function(x, y) {
@@ -143,7 +184,10 @@ VT100.Screen.prototype.eachChar = function(fn) {
 }
 
 VT100.Screen.prototype.writeChar = function(chr) {
-  this.setChar(this.cursor.x, this.cursor.y, chr)
+  this.setChar(this.cursor.x, this.cursor.y, {
+    chr: chr,
+    attr: VT100.prototype._deepCopy(this.attr),
+  })
 
   if (this.cursor.x + 1 < this.size.x) {
     this.setCursor(this.cursor.x+1, this.cursor.y)
@@ -211,9 +255,9 @@ VT100.Display.prototype.draw = function() {
   // Draw each char
   this.vt100.screen.eachChar(function(x, y, data) {
     if (data.cursor) {
-      thus.drawChar(x, y, data.chr, true)
+      thus.drawChar(x, y, data, true)
     } else if (data.chr) {
-      thus.drawChar(x, y, data.chr)
+      thus.drawChar(x, y, data)
     }
   })
 }
@@ -244,23 +288,30 @@ VT100.Display.prototype.setFont = function() {
 }
 
 VT100.Display.prototype.drawChar = function(x, y, chr, cursor) {
-  if (cursor===undefined) cursor = false
+  if (typeof chr.attr !== 'object')
+    chr.attr = {
+      bold: false,
+      underscore: false,
+      blink: false,
+      reverse: false,
+    }
 
   this.setFont()
 
-  if (cursor) {
+  if (cursor || chr.attr.reverse) {
     this.c.fillStyle = this.vt100.color.foreground
     this.c.fillRect(x*this.metric.x, y*this.metric.y,
         this.metric.x, this.metric.y)
     this.c.fillStyle = this.vt100.color.background
   }
 
-  if (chr)
-    this.c.fillText(chr, x*this.metric.x+this.metric.x/2, y*this.metric.y)
+  if (chr.chr)
+    this.c.fillText(chr.chr, x*this.metric.x+this.metric.x/2, y*this.metric.y)
 }
 
 VT100.Display.prototype.getWidth = function() {
   this.setFont()
+  // The widest character, in case we get given a variable-width font
   return this.c.measureText('m').width
 }
 
