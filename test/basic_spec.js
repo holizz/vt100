@@ -1,7 +1,7 @@
 var vt100 = require('../vt100')
 var helpers = require('./helpers/all')
 
-describe('VT100', function() {
+describe('VT100 basic functionality', function() {
   it('is the correct size', function() {
     var v = new vt100.VT100({
       size: {x: 4, y: 6},

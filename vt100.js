@@ -88,6 +88,11 @@ VT100.Screen.prototype.__init__ = function(vt100) {
     x: 0,
     y: 0
   }
+  this.codes = {
+    '[2J': function() {
+      this.clear()
+    }
+  }
 }
 
 VT100.Screen.prototype.resize = function(x, y) {
@@ -96,12 +101,20 @@ VT100.Screen.prototype.resize = function(x, y) {
 
   this.vt100.display.setSize(x, y)
 
+  this.reset()
+}
+
+VT100.Screen.prototype.reset = function() {
+  this.escape_sequence = ''
+  this.escaped = false
+  this.screen = []
+
   this.clear()
+
+  this.setCursor(0, 0)
 }
 
 VT100.Screen.prototype.clear = function() {
-  this.screen = []
-
   for (var yy = 0; yy < this.size.y; yy++) {
     this.screen[yy] = []
     for (var xx = 0; xx < this.size.x; xx++) {
@@ -109,7 +122,7 @@ VT100.Screen.prototype.clear = function() {
     }
   }
 
-  this.setCursor(0, 0)
+  this.setCursor(this.cursor.x, this.cursor.y)
 }
 
 VT100.Screen.prototype.setChar = function(x, y, chr) {
@@ -141,7 +154,18 @@ VT100.Screen.prototype.writeChar = function(chr) {
 
 VT100.Screen.prototype.writeString = function(str) {
   for (var i in str) {
-    this.writeChar(str[i])
+    if (str[i] === '\033') {
+      this.escape_sequence = ''
+      this.escaped = true
+    } else if (this.escaped) {
+      this.escape_sequence += str[i]
+      if (this.escape_sequence in this.codes) {
+        this.codes[this.escape_sequence].apply(this)
+        this.escaped = false
+      }
+    } else {
+      this.writeChar(str[i])
+    }
   }
 }
 
