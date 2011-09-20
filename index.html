@@ -11,7 +11,7 @@
       Modernizr.load({
         load: 'vt100.js',
         complete: function() {
-          vt100 = new VT100(document.getElementById('vt100'))
+          vt100 = new VT100({canvas:document.getElementById('vt100')})
         }
       })
     </script>
