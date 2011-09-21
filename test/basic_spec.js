@@ -4,7 +4,7 @@ var helpers = require('./helpers/all')
 describe('VT100 basic functionality', function() {
   it('is the correct size', function() {
     var v = new vt100.VT100({
-      size: {x: 4, y: 6},
+      screen: {size: {x: 4, y: 6}},
       display: (new helpers.Display)
     })
 
@@ -13,7 +13,7 @@ describe('VT100 basic functionality', function() {
 
   it('accepts simple strings', function() {
     var v = new vt100.VT100({
-      size: {x: 4, y: 3},
+      screen: {size: {x: 4, y: 3}},
       display: (new helpers.Display)
     })
 

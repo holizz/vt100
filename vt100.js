@@ -5,33 +5,31 @@ var VT100
 
 VT100 = function(options) {
   options = VT100._merge({
-    font: 'monospace',
-    fontSize: 12,
-    lineHeight: 14,
-    size: {x: 80, y: 24},
+    screen: undefined,
+    display: undefined,
   }, options)
 
   // Set things
-  this.font = options.fontSize+'px/'+options.lineHeight+'px "'+options.font+'"'
-  this.lineHeight = options.lineHeight
   this.color = {
     background: 'black',
     foreground: 'white',
   }
-  this.size = options.size
 
   // Initialization
-  if (options.screen === undefined)
-    this.screen = new VT100.Screen(this)
-  else
+  if (typeof options.screen !== 'undefined' && 'writeString' in options.screen)
     this.screen = options.screen
-
-  if (options.display === undefined)
-    this.display = new VT100.Display(this, options.canvas)
   else
-    this.display = options.display
+    this.screen = new VT100.Screen(options.screen)
+  this.screen.vt100 = this
 
-  this.screen.resize(this.size.x, this.size.y)
+  if (typeof options.display !== 'undefined' && 'draw' in options.display)
+    this.display = options.display
+  else
+    this.display = new VT100.Display(VT100._merge({size:this.screen.size,vt100:this}, options.display))
+  this.display.vt100 = this
+
+  this.screen.resize()
+  this.display.reset()
 
   this.loop()
 }
@@ -45,6 +43,16 @@ VT100.prototype.write = function(str) {
 
 VT100.prototype.getString = function() {
   return this.screen.getString()
+}
+
+// Core bits
+
+VT100.prototype.loop = function() {
+  this.draw()
+}
+
+VT100.prototype.draw = function() {
+  this.display.draw()
 }
 
 // Utility
@@ -87,26 +95,19 @@ VT100._deepCopy = function(oldObject) {
   return tempClone
 }
 
-// Core bits
-
-VT100.prototype.loop = function() {
-  this.draw()
-}
-
-VT100.prototype.draw = function() {
-  this.display.draw()
-}
-
 //////////////////////////////////////////////////////////////////////////////
 // VT100.Screen
 
-VT100.Screen = function(vt100) {
-  this.vt100 = vt100
+VT100.Screen = function(options) {
+  // this.vt100 will be set by VT100 itself
+
+  options = VT100._merge({
+    size: {x: 80, y: 24},
+  }, options)
+
+  this.size = options.size
+
   this.screen = []
-  this.size = {
-    x: 0,
-    y: 0
-  }
   this.cursor = {
     x: 0,
     y: 0
@@ -129,10 +130,12 @@ VT100.Screen = function(vt100) {
 }
 
 VT100.Screen.prototype.resize = function(x, y) {
-  this.size.x = x
-  this.size.y = y
+  if (x !== undefined && y !== undefined) {
+    this.size.x = x
+    this.size.y = y
+  }
 
-  this.vt100.display.setSize(x, y)
+  //TODO: this.vt100.display.resize(this.size.x, this.size.y)
 
   this.reset()
 }
@@ -222,15 +225,22 @@ VT100.Screen.prototype.getString = function() {
 //////////////////////////////////////////////////////////////////////////////
 // VT100.Display
 
-VT100.Display = function(vt100, canvas) {
-  this.vt100 = vt100
+VT100.Display = function(options) {
+  options = VT100._merge({
+    canvas: undefined,
+    font: 'monospace',
+    fontSize: 12,
+    lineHeight: 14,
+    size: {x: 0, y: 0},
+  }, options)
 
-  this.size = {
-    x: 0,
-    y: 0
-  }
+  this.vt100 = options.vt100
 
-  this.c = canvas.getContext('2d')
+  this.font = options.fontSize+'px/'+options.lineHeight+'px "'+options.font+'"'
+  this.lineHeight = options.lineHeight
+  this.size = options.size
+
+  this.c = options.canvas.getContext('2d')
 }
 
 VT100.Display.prototype.draw = function() {
@@ -250,7 +260,7 @@ VT100.Display.prototype.draw = function() {
   })
 }
 
-VT100.Display.prototype.setSize = function(x, y) {
+VT100.Display.prototype.resize = function(x, y) {
   this.size.x = x
   this.size.y = y
 
@@ -261,7 +271,7 @@ VT100.Display.prototype.reset = function() {
   this.setFont()
   this.metric = {
     x: this.getWidth(),
-    y: this.vt100.lineHeight
+    y: this.lineHeight
   }
 
   this.c.canvas.width = this.metric.x * this.size.x
@@ -269,7 +279,7 @@ VT100.Display.prototype.reset = function() {
 }
 
 VT100.Display.prototype.setFont = function() {
-  this.c.font = this.vt100.font
+  this.c.font = this.font
   this.c.fillStyle = this.vt100.color.foreground
   this.c.textAlign = 'center'
   this.c.textBaseline = 'top'

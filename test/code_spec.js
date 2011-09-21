@@ -4,7 +4,7 @@ var helpers = require('./helpers/all')
 describe('VT100 control codes', function() {
   it('clears screen (ED)', function() {
     var v = new vt100.VT100({
-      size: {x: 4, y: 3},
+      screen: {size: {x: 4, y: 3}},
       display: (new helpers.Display)
     })
 
@@ -21,7 +21,7 @@ describe('VT100 control codes', function() {
 
   it('uses char attrs (SGR)', function() {
     var v = new vt100.VT100({
-      size: {x: 4, y: 3},
+      screen: {size: {x: 4, y: 3}},
       display: (new helpers.Display)
     })
 
