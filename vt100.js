@@ -3,11 +3,7 @@ var VT100
 //////////////////////////////////////////////////////////////////////////////
 // VT100
 
-VT100 = function() {
-  this.__init__.apply(this, arguments)
-}
-
-VT100.prototype.__init__ = function(options) {
+VT100 = function(options) {
   options = this._merge({
     font: 'monospace',
     fontSize: 12,
@@ -104,11 +100,7 @@ VT100.prototype.draw = function() {
 //////////////////////////////////////////////////////////////////////////////
 // VT100.Screen
 
-VT100.Screen = function() {
-  this.__init__.apply(this, arguments)
-}
-
-VT100.Screen.prototype.__init__ = function(vt100) {
+VT100.Screen = function(vt100) {
   this.vt100 = vt100
   this.screen = []
   this.size = {
@@ -230,11 +222,7 @@ VT100.Screen.prototype.getString = function() {
 //////////////////////////////////////////////////////////////////////////////
 // VT100.Display
 
-VT100.Display = function() {
-  this.__init__.apply(this, arguments)
-}
-
-VT100.Display.prototype.__init__ = function(vt100, canvas) {
+VT100.Display = function(vt100, canvas) {
   this.vt100 = vt100
 
   this.size = {
