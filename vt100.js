@@ -4,7 +4,7 @@ var VT100
 // VT100
 
 VT100 = function(options) {
-  options = this._merge({
+  options = VT100._merge({
     font: 'monospace',
     fontSize: 12,
     lineHeight: 14,
@@ -49,14 +49,14 @@ VT100.prototype.getString = function() {
 
 // Utility
 
-VT100.prototype._merge = function(obj1, obj2) {
+VT100._merge = function(obj1, obj2) {
   var obj3 = {}
   for (var attrname in obj1) obj3[attrname] = obj1[attrname]
   for (var attrname in obj2) obj3[attrname] = obj2[attrname]
   return obj3
 }
 
-VT100.prototype._deepCopy = function(oldObject) {
+VT100._deepCopy = function(oldObject) {
   var getCloneOfArray = function(oldArray) {
     var tempClone = []
 
@@ -178,7 +178,7 @@ VT100.Screen.prototype.eachChar = function(fn) {
 VT100.Screen.prototype.writeChar = function(chr) {
   this.setChar(this.cursor.x, this.cursor.y, {
     chr: chr,
-    attr: VT100.prototype._deepCopy(this.attr),
+    attr: VT100._deepCopy(this.attr),
   })
 
   if (this.cursor.x + 1 < this.size.x) {
