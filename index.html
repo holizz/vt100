@@ -2,18 +2,12 @@
 <html>
   <head>
     <title>VT100</title>
-    <script src="libs/modernizr.js"></script>
   </head>
   <body>
     <canvas id="vt100"></canvas>
+    <script src="vt100.js"></script>
     <script>
-      var vt100
-      Modernizr.load({
-        load: 'vt100.js',
-        complete: function() {
-          vt100 = new VT100({canvas:document.getElementById('vt100')})
-        }
-      })
+      var vt100 = new VT100({canvas:document.getElementById('vt100')})
     </script>
   </body>
 </html>
