@@ -19,6 +19,9 @@ VT100 = Backbone.Model.extend({
       foreground: 'white',
     },
     size: {x: 80, y: 24},
+    font: 'monospace',
+    fontSize: 12,
+    lineHeight: 14,
   },
 
   initialize: function(options) {
@@ -26,89 +29,38 @@ VT100 = Backbone.Model.extend({
     this.set(options)
 
     // Initialization
-    if (typeof this.get('screen') === 'undefined' || !('writeString' in this.get('screen')))
-      this.set({screen: new VT100.Screen()})
-    this.get('screen').vt100 = this
+    this.set({screen: new VT100.Screen(this)})
 
-    if (typeof this.get('display') === 'undefined' || !('draw' in options.display))
+    if (_.isUndefined(this.get('display')) || !('draw' in options.display))
       this.set({display: new VT100.Display(this.get('canvas'))})
     this.get('display').vt100 = this
 
-    this.get('screen').resize()
+    this.get('screen').reset()
     this.get('display').reset()
 
-    this.loop()
+    this.get('display').draw()
   },
 
   // Things the user will want to do
 
   write: function(str) {
     this.get('screen').writeString(str)
-    this.draw()
+    this.get('display').draw()
   },
 
   getString: function() {
     return this.get('screen').getString()
   },
-
-  // Core bits
-
-  loop: function() {
-    this.draw()
-  },
-
-  draw: function() {
-    this.get('display').draw()
-  },
 })
-
-// Utility
-
-VT100._merge = function(obj1, obj2) {
-  var obj3 = {}
-  for (var attrname in obj1) obj3[attrname] = obj1[attrname]
-  for (var attrname in obj2) obj3[attrname] = obj2[attrname]
-  return obj3
-}
-
-VT100._deepCopy = function(oldObject) {
-  var getCloneOfArray = function(oldArray) {
-    var tempClone = []
-
-    for (var arrIndex = 0; arrIndex <= oldArray.length; arrIndex++)
-      if (typeof(oldArray[arrIndex]) == 'object')
-        tempClone.push(this.getCloneOfObject(oldArray[arrIndex]))
-      else
-        tempClone.push(oldArray[arrIndex])
-
-    return tempClone
-  }
-
-  var tempClone = {}
-
-  if (typeof(oldObject) == 'object')
-    for (prop in oldObject)
-      // for array use private method getCloneOfArray
-      if ((typeof(oldObject[prop]) == 'object') &&
-          (oldObject[prop]).__isArray)
-        tempClone[prop] = this.getCloneOfArray(oldObject[prop])
-          // for object make recursive call to getCloneOfObject
-      else if (typeof(oldObject[prop]) == 'object')
-        tempClone[prop] = this.getCloneOfObject(oldObject[prop])
-          // normal (non-object type) members
-      else
-        tempClone[prop] = oldObject[prop]
-
-  return tempClone
-}
 
 
 //////////////////////////////////////////////////////////////////////////////
 // VT100.Screen
 
-VT100.Screen = function() {
-  // this.vt100 will be set by VT100 itself
+VT100.Screen = function(vt100) {
+  this.vt100 = vt100
 
+  // Changes
   this.screen = []
   this.cursor = {
     x: 0,
@@ -121,6 +73,7 @@ VT100.Screen = function() {
     reverse: false,
   }
 
+  // Does not change
   this.codes = {
     '[2J': function() {
       this.clear()
@@ -129,17 +82,6 @@ VT100.Screen = function() {
       this.attr.reverse = true
     }
   }
-}
-
-VT100.Screen.prototype.resize = function(x, y) {
-  if (x !== undefined && y !== undefined) {
-    this.vt100.get('size').x = x
-    this.vt100.get('size').y = y
-  }
-
-  //TODO: this.vt100.display.resize(this.size.x, this.size.y)
-
-  this.reset()
 }
 
 VT100.Screen.prototype.reset = function() {
@@ -183,7 +125,7 @@ VT100.Screen.prototype.eachChar = function(fn) {
 VT100.Screen.prototype.writeChar = function(chr) {
   this.setChar(this.cursor.x, this.cursor.y, {
     chr: chr,
-    attr: VT100._deepCopy(this.attr),
+    attr: _.clone(this.attr),
   })
 
   if (this.cursor.x + 1 < this.vt100.get('size').x) {
@@ -229,17 +171,7 @@ VT100.Screen.prototype.getString = function() {
 // VT100.Display
 
 VT100.Display = function(canvas) {
-  options = {}
-  options = VT100._merge({
-    font: 'monospace',
-    fontSize: 12,
-    lineHeight: 14,
-  }, options)
-
-  this.vt100 = options.vt100
-
-  this.font = options.fontSize+'px/'+options.lineHeight+'px "'+options.font+'"'
-  this.lineHeight = options.lineHeight
+  // this.vt100 will be set by VT100 itself
 
   this.c = canvas.getContext('2d')
 }
@@ -265,7 +197,7 @@ VT100.Display.prototype.reset = function() {
   this.setFont()
   this.metric = {
     x: this.getWidth(),
-    y: this.lineHeight
+    y: this.vt100.get('lineHeight')
   }
 
   this.c.canvas.width = this.metric.x * this.vt100.get('size').x
@@ -273,6 +205,8 @@ VT100.Display.prototype.reset = function() {
 }
 
 VT100.Display.prototype.setFont = function() {
+  this.font = this.vt100.get('fontSize')+'px/'+this.vt100.get('lineHeight')+'px "'+this.vt100.get('font')+'"'
+
   this.c.font = this.font
   this.c.fillStyle = this.vt100.get('color').foreground
   this.c.textAlign = 'center'
@@ -280,14 +214,6 @@ VT100.Display.prototype.setFont = function() {
 }
 
 VT100.Display.prototype.drawChar = function(x, y, chr, cursor) {
-  if (typeof chr.attr !== 'object')
-    chr.attr = {
-      bold: false,
-      underscore: false,
-      blink: false,
-      reverse: false,
-    }
-
   this.setFont()
 
   if (cursor || chr.attr.reverse) {
