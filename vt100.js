@@ -185,6 +185,7 @@ VT100.Display = function(canvas) {
 }
 
 VT100.Display.prototype.postInit = function() {
+  this.vt100.bind('change', this.reset, this)
   this.vt100.bind('screen:reset', this.reset, this)
   this.vt100.bind('screen:draw', this.draw, this)
   this.reset()
