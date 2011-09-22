@@ -11,9 +11,7 @@ try {
 
 VT100 = Backbone.Model.extend({
   defaults: {
-    screen: undefined,
-    display: undefined,
-    canvas: undefined,
+    canvas: null,
     color: {
       background: 'black',
       foreground: 'white',
@@ -25,29 +23,31 @@ VT100 = Backbone.Model.extend({
   },
 
   initialize: function(options) {
+    this.display = options.display
+    delete options.display
 
     this.set(options)
 
     // Initialization
-    this.set({screen: new VT100.Screen(this)})
+    this.screen = new VT100.Screen(this)
 
-    if (_.isUndefined(this.get('display')) || !('draw' in options.display))
-      this.set({display: new VT100.Display(this.get('canvas'))})
-    this.get('display').vt100 = this
-    this.get('display').postInit()
+    if (_.isUndefined(this.display) || !('draw' in this.display))
+      this.display = new VT100.Display(this.get('canvas'))
+    this.display.vt100 = this
+    this.display.postInit()
 
-    this.get('screen').reset()
-    this.get('display').reset()
+    this.screen.reset()
+    this.display.reset()
   },
 
   // Things the user will want to do
 
   write: function(str) {
-    this.get('screen').writeString(str)
+    this.screen.writeString(str)
   },
 
   getString: function() {
-    return this.get('screen').getString()
+    return this.screen.getString()
   },
 })
 
@@ -198,7 +198,7 @@ VT100.Display.prototype.draw = function() {
   this.c.fillRect(0,0,this.c.canvas.width,this.c.canvas.height)
 
   // Draw each char
-  this.vt100.get('screen').eachChar(function(x, y, data) {
+  this.vt100.screen.eachChar(function(x, y, data) {
     if (data.cursor) {
       thus.drawChar(x, y, data, true)
     } else if (data.chr) {

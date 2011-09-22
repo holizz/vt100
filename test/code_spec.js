@@ -29,9 +29,9 @@ describe('VT100 control codes', function() {
     expect(v.getString()).toEqual('Te  \n    \n    \n')
     v.write('\033[7mst') // Reverse
     expect(v.getString()).toEqual('Test\n    \n    \n')
-    expect(v.get('screen').screen[0][0].attr.reverse).toEqual(false)
-    expect(v.get('screen').screen[0][1].attr.reverse).toEqual(false)
-    expect(v.get('screen').screen[0][2].attr.reverse).toEqual(true)
-    expect(v.get('screen').screen[0][3].attr.reverse).toEqual(true)
+    expect(v.screen.screen[0][0].attr.reverse).toEqual(false)
+    expect(v.screen.screen[0][1].attr.reverse).toEqual(false)
+    expect(v.screen.screen[0][2].attr.reverse).toEqual(true)
+    expect(v.screen.screen[0][3].attr.reverse).toEqual(true)
   })
 })
