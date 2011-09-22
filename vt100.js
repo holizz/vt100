@@ -1,59 +1,63 @@
 var VT100
 
+var Backbone = require('backbone')
+var _ = require('underscore')
+
 //////////////////////////////////////////////////////////////////////////////
 // VT100
 
-VT100 = function(options) {
-  options = VT100._merge({
+VT100 = Backbone.Model.extend({
+  defaults: {
     screen: undefined,
     display: undefined,
-  }, options)
+    canvas: undefined,
+    color: {
+      background: 'black',
+      foreground: 'white',
+    },
+    size: {x: 80, y: 24},
+  },
 
-  // Set things
-  this.color = {
-    background: 'black',
-    foreground: 'white',
-  }
+  initialize: function(options) {
 
-  // Initialization
-  if (typeof options.screen !== 'undefined' && 'writeString' in options.screen)
-    this.screen = options.screen
-  else
-    this.screen = new VT100.Screen(options.screen)
-  this.screen.vt100 = this
+    this.set(options)
 
-  if (typeof options.display !== 'undefined' && 'draw' in options.display)
-    this.display = options.display
-  else
-    this.display = new VT100.Display(VT100._merge({size:this.screen.size,vt100:this}, options.display))
-  this.display.vt100 = this
+    // Initialization
+    if (typeof this.get('screen') === 'undefined' || !('writeString' in this.get('screen')))
+      this.set({screen: new VT100.Screen()})
+    this.get('screen').vt100 = this
 
-  this.screen.resize()
-  this.display.reset()
+    if (typeof this.get('display') === 'undefined' || !('draw' in options.display))
+      this.set({display: new VT100.Display(this.get('canvas'))})
+    this.get('display').vt100 = this
 
-  this.loop()
-}
+    this.get('screen').resize()
+    this.get('display').reset()
 
-// Things the user will want to do
+    this.loop()
+  },
 
-VT100.prototype.write = function(str) {
-  this.screen.writeString(str)
-  this.draw()
-}
+  // Things the user will want to do
 
-VT100.prototype.getString = function() {
-  return this.screen.getString()
-}
+  write: function(str) {
+    this.get('screen').writeString(str)
+    this.draw()
+  },
 
-// Core bits
+  getString: function() {
+    return this.get('screen').getString()
+  },
 
-VT100.prototype.loop = function() {
-  this.draw()
-}
+  // Core bits
 
-VT100.prototype.draw = function() {
-  this.display.draw()
-}
+  loop: function() {
+    this.draw()
+  },
+
+  draw: function() {
+    this.get('display').draw()
+  },
+})
 
 // Utility
 
@@ -95,17 +99,12 @@ VT100._deepCopy = function(oldObject) {
   return tempClone
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 // VT100.Screen
 
-VT100.Screen = function(options) {
+VT100.Screen = function() {
   // this.vt100 will be set by VT100 itself
-
-  options = VT100._merge({
-    size: {x: 80, y: 24},
-  }, options)
-
-  this.size = options.size
 
   this.screen = []
   this.cursor = {
@@ -131,8 +130,8 @@ VT100.Screen = function(options) {
 
 VT100.Screen.prototype.resize = function(x, y) {
   if (x !== undefined && y !== undefined) {
-    this.size.x = x
-    this.size.y = y
+    this.vt100.get('size').x = x
+    this.vt100.get('size').y = y
   }
 
   //TODO: this.vt100.display.resize(this.size.x, this.size.y)
@@ -151,9 +150,9 @@ VT100.Screen.prototype.reset = function() {
 }
 
 VT100.Screen.prototype.clear = function() {
-  for (var yy = 0; yy < this.size.y; yy++) {
+  for (var yy = 0; yy < this.vt100.get('size').y; yy++) {
     this.screen[yy] = []
-    for (var xx = 0; xx < this.size.x; xx++) {
+    for (var xx = 0; xx < this.vt100.get('size').x; xx++) {
       this.screen[yy][xx] = {}
     }
   }
@@ -173,8 +172,8 @@ VT100.Screen.prototype.setCursor = function(x, y) {
 }
 
 VT100.Screen.prototype.eachChar = function(fn) {
-  for (var xx = 0; xx < this.size.x; xx++)
-    for (var yy = 0; yy < this.size.y; yy++)
+  for (var xx = 0; xx < this.vt100.get('size').x; xx++)
+    for (var yy = 0; yy < this.vt100.get('size').y; yy++)
       fn(xx, yy, this.screen[yy][xx])
 }
 
@@ -184,9 +183,9 @@ VT100.Screen.prototype.writeChar = function(chr) {
     attr: VT100._deepCopy(this.attr),
   })
 
-  if (this.cursor.x + 1 < this.size.x) {
+  if (this.cursor.x + 1 < this.vt100.get('size').x) {
     this.setCursor(this.cursor.x+1, this.cursor.y)
-  } else{
+  } else {
     this.setCursor(0, this.cursor.y+1)
   }
 }
@@ -210,8 +209,8 @@ VT100.Screen.prototype.writeString = function(str) {
 
 VT100.Screen.prototype.getString = function() {
   var s = ''
-  for (var yy = 0; yy < this.size.y; yy++) {
-    for (var xx = 0; xx < this.size.x; xx++) {
+  for (var yy = 0; yy < this.vt100.get('size').y; yy++) {
+    for (var xx = 0; xx < this.vt100.get('size').x; xx++) {
       if (this.screen[yy][xx].chr)
         s += this.screen[yy][xx].chr
       else
@@ -222,49 +221,41 @@ VT100.Screen.prototype.getString = function() {
   return s
 }
 
+
 //////////////////////////////////////////////////////////////////////////////
 // VT100.Display
 
-VT100.Display = function(options) {
+VT100.Display = function(canvas) {
+  options = {}
   options = VT100._merge({
-    canvas: undefined,
     font: 'monospace',
     fontSize: 12,
     lineHeight: 14,
-    size: {x: 0, y: 0},
   }, options)
 
   this.vt100 = options.vt100
 
   this.font = options.fontSize+'px/'+options.lineHeight+'px "'+options.font+'"'
   this.lineHeight = options.lineHeight
-  this.size = options.size
 
-  this.c = options.canvas.getContext('2d')
+  this.c = canvas.getContext('2d')
 }
 
 VT100.Display.prototype.draw = function() {
   var thus = this
 
   // Clear
-  this.c.fillStyle = this.vt100.color.background
+  this.c.fillStyle = this.vt100.get('color').background
   this.c.fillRect(0,0,this.c.canvas.width,this.c.canvas.height)
 
   // Draw each char
-  this.vt100.screen.eachChar(function(x, y, data) {
+  this.vt100.get('screen').eachChar(function(x, y, data) {
     if (data.cursor) {
       thus.drawChar(x, y, data, true)
     } else if (data.chr) {
       thus.drawChar(x, y, data)
     }
   })
-}
-
-VT100.Display.prototype.resize = function(x, y) {
-  this.size.x = x
-  this.size.y = y
-
-  this.reset()
 }
 
 VT100.Display.prototype.reset = function() {
@@ -274,13 +265,13 @@ VT100.Display.prototype.reset = function() {
     y: this.lineHeight
   }
 
-  this.c.canvas.width = this.metric.x * this.size.x
-  this.c.canvas.height = this.metric.y * this.size.y
+  this.c.canvas.width = this.metric.x * this.vt100.get('size').x
+  this.c.canvas.height = this.metric.y * this.vt100.get('size').y
 }
 
 VT100.Display.prototype.setFont = function() {
   this.c.font = this.font
-  this.c.fillStyle = this.vt100.color.foreground
+  this.c.fillStyle = this.vt100.get('color').foreground
   this.c.textAlign = 'center'
   this.c.textBaseline = 'top'
 }
@@ -297,10 +288,10 @@ VT100.Display.prototype.drawChar = function(x, y, chr, cursor) {
   this.setFont()
 
   if (cursor || chr.attr.reverse) {
-    this.c.fillStyle = this.vt100.color.foreground
+    this.c.fillStyle = this.vt100.get('color').foreground
     this.c.fillRect(x*this.metric.x, y*this.metric.y,
         this.metric.x, this.metric.y)
-    this.c.fillStyle = this.vt100.color.background
+    this.c.fillStyle = this.vt100.get('color').background
   }
 
   if (chr.chr)
@@ -312,6 +303,7 @@ VT100.Display.prototype.getWidth = function() {
   // The widest character, in case we get given a variable-width font
   return this.c.measureText('m').width
 }
+
 
 //////////////////////////////////////////////////////////////////////////////
 // CommonJS export
