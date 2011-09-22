@@ -76,14 +76,20 @@ VT100.Screen = function(vt100) {
   this.reset()
 }
 
-VT100.Screen.codes = {
-  '[2J': function() {
-    this.clear()
+VT100.Screen.codes = [
+  {
+    re: /^\[2J$/,
+    fn: function() {
+      this.clear()
+    }
   },
-  '[7m': function() {
-    this.attr.reverse = true
-  }
-}
+  {
+    re: /^\[7m$/,
+    fn: function() {
+      this.attr.reverse = true
+    }
+  },
+]
 
 VT100.Screen.prototype.reset = function() {
   this.size = this.vt100.get('size')
@@ -147,11 +153,17 @@ VT100.Screen.prototype.writeString = function(str) {
       this.escape_sequence = ''
       this.escaped = true
     } else if (this.escaped) {
+      var thus = this, m
       this.escape_sequence += str[i]
-      if (this.escape_sequence in VT100.Screen.codes) {
-        VT100.Screen.codes[this.escape_sequence].apply(this)
+
+      m = _.detect(VT100.Screen.codes,
+                   function(c){return thus.escape_sequence.match(c.re)})
+
+      if (!_.isUndefined(m)) {
+        m.fn.apply(this)
         this.escaped = false
       }
+
     } else {
       this.writeChar(str[i])
     }
