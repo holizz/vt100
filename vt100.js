@@ -12,14 +12,14 @@ try {
 VT100 = Backbone.Model.extend({
   defaults: {
     canvas: null,
+    size: {x: 80, y: 24},
     color: {
       background: 'black',
       foreground: 'white',
     },
-    size: {x: 80, y: 24},
     font: 'monospace',
-    fontSize: 12,
-    lineHeight: 14,
+    fontSize: 12, // px
+    lineHeight: 1.2, // em
   },
 
   initialize: function(options) {
@@ -73,17 +73,16 @@ VT100.Screen = function(vt100) {
     reverse: false,
   }
 
-  // Does not change
-  this.codes = {
-    '[2J': function() {
-      this.clear()
-    },
-    '[7m': function() {
-      this.attr.reverse = true
-    }
-  }
-
   this.reset()
+}
+
+VT100.Screen.codes = {
+  '[2J': function() {
+    this.clear()
+  },
+  '[7m': function() {
+    this.attr.reverse = true
+  }
 }
 
 VT100.Screen.prototype.reset = function() {
@@ -149,8 +148,8 @@ VT100.Screen.prototype.writeString = function(str) {
       this.escaped = true
     } else if (this.escaped) {
       this.escape_sequence += str[i]
-      if (this.escape_sequence in this.codes) {
-        this.codes[this.escape_sequence].apply(this)
+      if (this.escape_sequence in VT100.Screen.codes) {
+        VT100.Screen.codes[this.escape_sequence].apply(this)
         this.escaped = false
       }
     } else {
@@ -213,7 +212,7 @@ VT100.Display.prototype.reset = function() {
 
   this.metric = {
     x: this.getWidth(),
-    y: this.vt100.get('lineHeight')
+    y: this.getHeight(),
   }
 
   this.setFont()
@@ -225,7 +224,7 @@ VT100.Display.prototype.reset = function() {
 }
 
 VT100.Display.prototype.setFont = function() {
-  this.font = this.vt100.get('fontSize')+'px/'+this.vt100.get('lineHeight')+'px "'+this.vt100.get('font')+'"'
+  this.font = this.vt100.get('fontSize')+'px/'+this.vt100.get('lineHeight')+'em "'+this.vt100.get('font')+'"'
 
   this.c.font = this.font
   this.c.fillStyle = this.vt100.get('color').foreground
@@ -245,6 +244,10 @@ VT100.Display.prototype.drawChar = function(x, y, chr, cursor) {
 
   if (chr.chr)
     this.c.fillText(chr.chr, x*this.metric.x+this.metric.x/2, y*this.metric.y)
+}
+
+VT100.Display.prototype.getHeight = function() {
+  return this.vt100.get('fontSize') * this.vt100.get('lineHeight')
 }
 
 VT100.Display.prototype.getWidth = function() {
