@@ -1,7 +1,10 @@
 var VT100
 
-var Backbone = require('backbone')
-var _ = require('underscore')
+try {
+  global.Backbone = require('backbone')
+  global._ = require('underscore')
+} catch (e) {
+}
 
 //////////////////////////////////////////////////////////////////////////////
 // VT100
