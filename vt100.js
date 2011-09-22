@@ -34,6 +34,7 @@ VT100 = Backbone.Model.extend({
     if (_.isUndefined(this.get('display')) || !('draw' in options.display))
       this.set({display: new VT100.Display(this.get('canvas'))})
     this.get('display').vt100 = this
+    this.get('display').postInit()
 
     this.get('screen').reset()
     this.get('display').reset()
@@ -60,6 +61,8 @@ VT100 = Backbone.Model.extend({
 VT100.Screen = function(vt100) {
   this.vt100 = vt100
 
+  this.vt100.bind('change:size', this.reset, this)
+
   // Changes
   this.screen = []
   this.cursor = {
@@ -85,6 +88,8 @@ VT100.Screen = function(vt100) {
 }
 
 VT100.Screen.prototype.reset = function() {
+  this.size = this.vt100.get('size')
+
   this.escape_sequence = ''
   this.escaped = false
   this.screen = []
@@ -95,9 +100,9 @@ VT100.Screen.prototype.reset = function() {
 }
 
 VT100.Screen.prototype.clear = function() {
-  for (var yy = 0; yy < this.vt100.get('size').y; yy++) {
+  for (var yy = 0; yy < this.size.y; yy++) {
     this.screen[yy] = []
-    for (var xx = 0; xx < this.vt100.get('size').x; xx++) {
+    for (var xx = 0; xx < this.size.x; xx++) {
       this.screen[yy][xx] = {}
     }
   }
@@ -117,8 +122,8 @@ VT100.Screen.prototype.setCursor = function(x, y) {
 }
 
 VT100.Screen.prototype.eachChar = function(fn) {
-  for (var xx = 0; xx < this.vt100.get('size').x; xx++)
-    for (var yy = 0; yy < this.vt100.get('size').y; yy++)
+  for (var xx = 0; xx < this.size.x; xx++)
+    for (var yy = 0; yy < this.size.y; yy++)
       fn(xx, yy, this.screen[yy][xx])
 }
 
@@ -128,7 +133,7 @@ VT100.Screen.prototype.writeChar = function(chr) {
     attr: _.clone(this.attr),
   })
 
-  if (this.cursor.x + 1 < this.vt100.get('size').x) {
+  if (this.cursor.x + 1 < this.size.x) {
     this.setCursor(this.cursor.x+1, this.cursor.y)
   } else {
     this.setCursor(0, this.cursor.y+1)
@@ -154,8 +159,8 @@ VT100.Screen.prototype.writeString = function(str) {
 
 VT100.Screen.prototype.getString = function() {
   var s = ''
-  for (var yy = 0; yy < this.vt100.get('size').y; yy++) {
-    for (var xx = 0; xx < this.vt100.get('size').x; xx++) {
+  for (var yy = 0; yy < this.size.y; yy++) {
+    for (var xx = 0; xx < this.size.x; xx++) {
       if (this.screen[yy][xx].chr)
         s += this.screen[yy][xx].chr
       else
@@ -176,6 +181,10 @@ VT100.Display = function(canvas) {
   this.c = canvas.getContext('2d')
 }
 
+VT100.Display.prototype.postInit = function() {
+  this.vt100.bind('change:size', this.reset, this)
+}
+
 VT100.Display.prototype.draw = function() {
   var thus = this
 
@@ -194,14 +203,16 @@ VT100.Display.prototype.draw = function() {
 }
 
 VT100.Display.prototype.reset = function() {
+  this.size = this.vt100.get('size')
+
   this.setFont()
   this.metric = {
     x: this.getWidth(),
     y: this.vt100.get('lineHeight')
   }
 
-  this.c.canvas.width = this.metric.x * this.vt100.get('size').x
-  this.c.canvas.height = this.metric.y * this.vt100.get('size').y
+  this.c.canvas.width = this.metric.x * this.size.x
+  this.c.canvas.height = this.metric.y * this.size.y
 }
 
 VT100.Display.prototype.setFont = function() {
