@@ -38,15 +38,12 @@ VT100 = Backbone.Model.extend({
 
     this.get('screen').reset()
     this.get('display').reset()
-
-    this.get('display').draw()
   },
 
   // Things the user will want to do
 
   write: function(str) {
     this.get('screen').writeString(str)
-    this.get('display').draw()
   },
 
   getString: function() {
@@ -85,6 +82,8 @@ VT100.Screen = function(vt100) {
       this.attr.reverse = true
     }
   }
+
+  this.reset()
 }
 
 VT100.Screen.prototype.reset = function() {
@@ -97,6 +96,8 @@ VT100.Screen.prototype.reset = function() {
   this.clear()
 
   this.setCursor(0, 0)
+
+  this.vt100.trigger('screen:reset')
 }
 
 VT100.Screen.prototype.clear = function() {
@@ -119,6 +120,7 @@ VT100.Screen.prototype.setCursor = function(x, y) {
   this.screen[y][x].cursor = true
   this.cursor.x = x
   this.cursor.y = y
+  this.vt100.trigger('screen:draw')
 }
 
 VT100.Screen.prototype.eachChar = function(fn) {
@@ -155,6 +157,7 @@ VT100.Screen.prototype.writeString = function(str) {
       this.writeChar(str[i])
     }
   }
+  this.vt100.trigger('screen:draw')
 }
 
 VT100.Screen.prototype.getString = function() {
@@ -182,7 +185,9 @@ VT100.Display = function(canvas) {
 }
 
 VT100.Display.prototype.postInit = function() {
-  this.vt100.bind('change:size', this.reset, this)
+  this.vt100.bind('screen:reset', this.reset, this)
+  this.vt100.bind('screen:draw', this.draw, this)
+  this.reset()
 }
 
 VT100.Display.prototype.draw = function() {
@@ -205,14 +210,17 @@ VT100.Display.prototype.draw = function() {
 VT100.Display.prototype.reset = function() {
   this.size = this.vt100.get('size')
 
-  this.setFont()
   this.metric = {
     x: this.getWidth(),
     y: this.vt100.get('lineHeight')
   }
 
+  this.setFont()
+
   this.c.canvas.width = this.metric.x * this.size.x
   this.c.canvas.height = this.metric.y * this.size.y
+
+  this.draw()
 }
 
 VT100.Display.prototype.setFont = function() {
@@ -230,7 +238,7 @@ VT100.Display.prototype.drawChar = function(x, y, chr, cursor) {
   if (cursor || chr.attr.reverse) {
     this.c.fillStyle = this.vt100.get('color').foreground
     this.c.fillRect(x*this.metric.x, y*this.metric.y,
-        this.metric.x, this.metric.y)
+                    this.metric.x, this.metric.y)
     this.c.fillStyle = this.vt100.get('color').background
   }
 
