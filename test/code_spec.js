@@ -37,12 +37,13 @@ describe('VT100 control codes', function() {
     expect(v.screen.screen[0][2].attr.bold).toEqual(true)
 
     v.screen.reset()
-    // Reverse, bold, underline
-    v.write('\033[7;1;4mx')
+    // Reverse, bold, underline, blink
+    v.write('\033[7;1;4;5mx')
     expect(v.getString()).toEqual('x   \n    \n    \n')
     expect(v.screen.screen[0][0].attr.reverse).toEqual(true)
     expect(v.screen.screen[0][0].attr.bold).toEqual(true)
     expect(v.screen.screen[0][0].attr.underscore).toEqual(true)
+    expect(v.screen.screen[0][0].attr.blink).toEqual(true)
 
     v.screen.reset()
     // Reverse and bold, noattr

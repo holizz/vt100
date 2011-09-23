@@ -103,6 +103,9 @@ VT100.Screen.codes = [
         case 4:
           thus.attr.underscore = true
           break;
+        case 5:
+          thus.attr.blink = true
+          break;
         case 7:
           thus.attr.reverse = true
           break;
@@ -266,6 +269,8 @@ VT100.Display.prototype.setFont = function() {
 }
 
 VT100.Display.prototype.drawChar = function(x, y, chr, cursor) {
+  // chr.attr.blink is intentionally ignored
+
   this.setFont()
   var chrFillStyle = this.c.fillStyle
 
