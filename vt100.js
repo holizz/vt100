@@ -84,9 +84,12 @@ VT100.Screen.codes = [
     }
   },
   {
-    re: /^\[7m$/,
-    fn: function() {
-      this.attr.reverse = true
+    re: /^\[(\d)m$/,
+    fn: function(m) {
+      if (m[1] === '7')
+        this.attr.reverse = true
+      if (m[1] === '1')
+        this.attr.bold = true
     }
   },
 ]
@@ -153,14 +156,14 @@ VT100.Screen.prototype.writeString = function(str) {
       this.escape_sequence = ''
       this.escaped = true
     } else if (this.escaped) {
-      var thus = this, m
+      var thus = this, c, m
       this.escape_sequence += str[i]
 
-      m = _.detect(VT100.Screen.codes,
-                   function(c){return thus.escape_sequence.match(c.re)})
+      c = _.detect(VT100.Screen.codes,
+                   function(c){return m = thus.escape_sequence.match(c.re)})
 
-      if (!_.isUndefined(m)) {
-        m.fn.apply(this)
+      if (!_.isUndefined(c)) {
+        c.fn.call(this, m)
         this.escaped = false
       }
 
@@ -247,7 +250,11 @@ VT100.Display.prototype.setFont = function() {
 VT100.Display.prototype.drawChar = function(x, y, chr, cursor) {
   this.setFont()
 
-  if (cursor || chr.attr.reverse) {
+  if (chr.attr && chr.attr.bold) {
+    this.c.font = 'bold '+this.font
+  }
+
+  if (cursor || chr.attr && chr.attr.reverse) {
     this.c.fillStyle = this.vt100.get('color').foreground
     this.c.fillRect(x*this.metric.x, y*this.metric.y,
                     this.metric.x, this.metric.y)

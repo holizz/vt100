@@ -25,13 +25,15 @@ describe('VT100 control codes', function() {
       display: (new helpers.Display)
     })
 
-    v.write('Te')
-    expect(v.getString()).toEqual('Te  \n    \n    \n')
-    v.write('\033[7mst') // Reverse
-    expect(v.getString()).toEqual('Test\n    \n    \n')
+    // Normal, reverse, reverse and bold
+    v.write('T\033[7me\033[1ms')
+    expect(v.getString()).toEqual('Tes \n    \n    \n')
     expect(v.screen.screen[0][0].attr.reverse).toEqual(false)
-    expect(v.screen.screen[0][1].attr.reverse).toEqual(false)
+    expect(v.screen.screen[0][1].attr.reverse).toEqual(true)
     expect(v.screen.screen[0][2].attr.reverse).toEqual(true)
-    expect(v.screen.screen[0][3].attr.reverse).toEqual(true)
+
+    expect(v.screen.screen[0][0].attr.bold).toEqual(false)
+    expect(v.screen.screen[0][1].attr.bold).toEqual(false)
+    expect(v.screen.screen[0][2].attr.bold).toEqual(true)
   })
 })
