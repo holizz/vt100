@@ -84,12 +84,15 @@ VT100.Screen.codes = [
     }
   },
   {
-    re: /^\[(\d)m$/,
+    re: /^\[(\d(?:;\d)*)m$/,
     fn: function(m) {
-      if (m[1] === '7')
-        this.attr.reverse = true
-      if (m[1] === '1')
-        this.attr.bold = true
+      var thus = this
+      _.each(m[1].split(';'), function(a) {
+        if (a === '7')
+          thus.attr.reverse = true
+        if (a === '1')
+          thus.attr.bold = true
+      })
     }
   },
 ]
