@@ -42,5 +42,14 @@ describe('VT100 control codes', function() {
     expect(v.getString()).toEqual('x   \n    \n    \n')
     expect(v.screen.screen[0][0].attr.reverse).toEqual(true)
     expect(v.screen.screen[0][0].attr.bold).toEqual(true)
+
+    v.screen.reset()
+    // Reverse and bold, noattr
+    v.write('\033[7;1mx\033[0my')
+    expect(v.getString()).toEqual('xy  \n    \n    \n')
+    expect(v.screen.screen[0][0].attr.reverse).toEqual(true)
+    expect(v.screen.screen[0][0].attr.bold).toEqual(true)
+    expect(v.screen.screen[0][1].attr.reverse).toEqual(false)
+    expect(v.screen.screen[0][1].attr.bold).toEqual(false)
   })
 })

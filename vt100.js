@@ -92,6 +92,13 @@ VT100.Screen.codes = [
           thus.attr.reverse = true
         if (a === '1')
           thus.attr.bold = true
+        if (a === '0')
+          thus.attr = {
+            bold: false,
+            underscore: false,
+            blink: false,
+            reverse: false,
+          }
       })
     }
   },
