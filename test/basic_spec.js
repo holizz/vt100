@@ -23,4 +23,16 @@ describe('VT100 basic functionality', function() {
     v.write('ting')
     expect(v.getString()).toEqual('Test\ning \n    \n')
   })
+
+  it('shifts the top line off when needed', function() {
+    var v = new vt100.VT100({
+      size: {x: 2, y: 4},
+      display: (new helpers.Display)
+    })
+
+    v.write('aabbccd')
+    expect(v.getString()).toEqual('aa\nbb\ncc\nd \n')
+    v.write('d')
+    expect(v.getString()).toEqual('bb\ncc\ndd\n  \n')
+  })
 })

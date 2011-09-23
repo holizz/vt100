@@ -131,13 +131,18 @@ VT100.Screen.prototype.reset = function() {
 
 VT100.Screen.prototype.clear = function() {
   for (var yy = 0; yy < this.size.y; yy++) {
-    this.screen[yy] = []
-    for (var xx = 0; xx < this.size.x; xx++) {
-      this.screen[yy][xx] = {}
-    }
+    this.screen[yy] = this.line()
   }
 
   this.setCursor(this.cursor.x, this.cursor.y)
+}
+
+VT100.Screen.prototype.line = function() {
+  var line = []
+  for (var xx = 0; xx < this.size.x; xx++) {
+    line[xx] = {}
+  }
+  return line
 }
 
 VT100.Screen.prototype.setChar = function(x, y, chr) {
@@ -165,8 +170,17 @@ VT100.Screen.prototype.writeChar = function(chr) {
   })
 
   if (this.cursor.x + 1 < this.size.x) {
+    // Normal
     this.setCursor(this.cursor.x+1, this.cursor.y)
+
+  } else if (this.cursor.y + 1 >= this.size.y) {
+    // At x-max/y-max
+    this.screen.shift()
+    this.screen.push(this.line())
+    this.setCursor(0, this.size.y-1)
+
   } else {
+    // At x-max
     this.setCursor(0, this.cursor.y+1)
   }
 }
