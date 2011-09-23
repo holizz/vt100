@@ -88,17 +88,25 @@ VT100.Screen.codes = [
     fn: function(m) {
       var thus = this
       _.each(m[1].split(';'), function(a) {
-        if (a === '7')
-          thus.attr.reverse = true
-        if (a === '1')
-          thus.attr.bold = true
-        if (a === '0')
+        switch (parseInt(a)) {
+        case 0:
           thus.attr = {
             bold: false,
             underscore: false,
             blink: false,
             reverse: false,
           }
+          break;
+        case 1:
+          thus.attr.bold = true
+          break;
+        case 4:
+          thus.attr.underscore = true
+          break;
+        case 7:
+          thus.attr.reverse = true
+          break;
+        }
       })
     }
   },
@@ -259,6 +267,7 @@ VT100.Display.prototype.setFont = function() {
 
 VT100.Display.prototype.drawChar = function(x, y, chr, cursor) {
   this.setFont()
+  var chrFillStyle = this.c.fillStyle
 
   if (chr.attr && chr.attr.bold) {
     this.c.font = 'bold '+this.font
@@ -268,11 +277,20 @@ VT100.Display.prototype.drawChar = function(x, y, chr, cursor) {
     this.c.fillStyle = this.vt100.get('color').foreground
     this.c.fillRect(x*this.metric.x, y*this.metric.y,
                     this.metric.x, this.metric.y)
-    this.c.fillStyle = this.vt100.get('color').background
+    chrFillStyle = this.vt100.get('color').background
   }
 
-  if (chr.chr)
+  if (chr.attr && chr.attr.underscore) {
+    this.c.fillStyle = chrFillStyle
+    var width = this.metric.y / 16
+    this.c.fillRect(x*this.metric.x, (y+1)*this.metric.y-width,
+                    this.metric.x, width)
+  }
+
+  if (chr.chr) {
+    this.c.fillStyle = chrFillStyle
     this.c.fillText(chr.chr, x*this.metric.x+this.metric.x/2, y*this.metric.y)
+  }
 }
 
 VT100.Display.prototype.getHeight = function() {
