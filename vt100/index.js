@@ -1,11 +1,13 @@
+'use strict';
+
 var VT100
 
-if (global.Backbone === undefined) {
-  global.Backbone = require('backbone')
+if (window.Backbone === undefined) {
+  var Backbone = require('backbone')
 }
 
-if (global._ === undefined) {
-  global._ = require('underscore')
+if (window._ === undefined) {
+  var _ = require('underscore')
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -90,7 +92,7 @@ VT100.Screen.codes = [
     fn: function(m) {
       var thus = this
       _.each(m[1].split(';'), function(a) {
-        switch (parseInt(a)) {
+        switch (parseInt(a, 10)) {
         case 0:
           thus.attr = {
             bold: false,
@@ -189,7 +191,7 @@ VT100.Screen.prototype.writeChar = function(chr) {
 
 VT100.Screen.prototype.writeString = function(str) {
   for (var i in str) {
-    if (str[i] === '\033') {
+    if (str[i] === '\0x1b') {
       this.escape_sequence = ''
       this.escaped = true
     } else if (this.escaped) {
@@ -197,7 +199,7 @@ VT100.Screen.prototype.writeString = function(str) {
       this.escape_sequence += str[i]
 
       c = _.detect(VT100.Screen.codes,
-                   function(c){return m = thus.escape_sequence.match(c.re)})
+                   function(c){m = thus.escape_sequence.match(c.re); return m})
 
       if (!_.isUndefined(c)) {
         c.fn.call(this, m)
