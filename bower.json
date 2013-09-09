@@ -1,0 +1,7 @@
+{
+  "name": "vt100",
+  "dependencies": {
+    "backbone": "~1.0.0",
+    "underscore": "~1.5.2"
+  }
+}

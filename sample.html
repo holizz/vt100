@@ -1,13 +1,14 @@
 <!doctype html>
 <html>
   <head>
+    <meta charset="UTF-8">
     <title>VT100</title>
   </head>
   <body>
     <canvas id="vt100"></canvas>
-    <script src="libs/underscore.js"></script>
-    <script src="libs/backbone.js"></script>
-    <script src="vt100.js"></script>
+    <script src="bower_components/underscore/underscore-min.js"></script>
+    <script src="bower_components/backbone/backbone-min.js"></script>
+    <script src="vt100/index.js"></script>
     <script>
       var vt100 = new VT100({canvas:document.getElementById('vt100')})
     </script>
