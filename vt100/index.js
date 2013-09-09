@@ -1,9 +1,11 @@
 var VT100
 
-try {
+if (global.Backbone === undefined) {
   global.Backbone = require('backbone')
+}
+
+if (global._ === undefined) {
   global._ = require('underscore')
-} catch (e) {
 }
 
 //////////////////////////////////////////////////////////////////////////////
