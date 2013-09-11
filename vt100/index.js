@@ -188,7 +188,7 @@ VT100.Screen.prototype.writeChar = function(chr) {
 
 VT100.Screen.prototype.writeString = function(str) {
   for (var i in str) {
-    if (str[i] === '\0x1b') {
+    if (str[i] === '\u001b') {
       this.escape_sequence = ''
       this.escaped = true
     } else if (this.escaped) {
