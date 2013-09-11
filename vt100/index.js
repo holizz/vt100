@@ -2,12 +2,9 @@
 
 var VT100
 
-if (window.Backbone === undefined) {
-  var Backbone = require('backbone')
-}
-
-if (window._ === undefined) {
+if (typeof window === 'undefined') {
   var _ = require('underscore')
+    , Backbone = require('backbone')
 }
 
 //////////////////////////////////////////////////////////////////////////////
