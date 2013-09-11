@@ -32,8 +32,9 @@ VT100 = Backbone.Model.extend({
     // Initialization
     this.screen = new VT100.Screen(this)
 
-    if (_.isUndefined(this.display) || !('draw' in this.display))
+    if (_.isUndefined(this.display) || !('draw' in this.display)) {
       this.display = new VT100.Display(this.get('canvas'))
+    }
     this.display.vt100 = this
     this.display.postInit()
 
@@ -214,10 +215,12 @@ VT100.Screen.prototype.getString = function() {
   var s = ''
   for (var yy = 0; yy < this.size.y; yy++) {
     for (var xx = 0; xx < this.size.x; xx++) {
-      if (this.screen[yy][xx].chr)
+      if (this.screen[yy][xx].chr) {
         s += this.screen[yy][xx].chr
-      else
+      }
+      else {
         s += ' '
+      }
     }
     s += '\n'
   }
@@ -327,5 +330,6 @@ VT100.Display.prototype.getWidth = function() {
 //////////////////////////////////////////////////////////////////////////////
 // CommonJS export
 
-if (typeof exports !== 'undefined')
+if (typeof exports !== 'undefined') {
   exports.VT100 = VT100
+}
